@@ -68,17 +68,19 @@ async def run_digital_twin_rollout(payload: Dict[str, Any] = Body(...)):
     """
     k_steps = int(payload.get("k_steps", 10))
     stop_on_terminal = bool(payload.get("stop_on_terminal", True))
+    seed = int(payload.get("seed", 42))
+    entry_point_ip = payload.get("entry_point_ip") or payload.get("initial_target_ip") or "192.168.1.1"
+    injected_technique = payload.get("injected_technique")
 
     seed_state = NetworkGraphState()
-    
-    initial_ip = payload.get("initial_target_ip", "192.168.1.20")
-    if initial_ip in seed_state.hosts:
-        seed_state.update_host_state(initial_ip, stage_idx=1, stage_name="Initial Access", infiltration_prob=0.45)
 
     trajectory = twin_engine.rollout(
         seed_state=seed_state,
         k_steps=k_steps,
         stop_on_terminal=stop_on_terminal,
+        seed=seed,
+        entry_point_ip=entry_point_ip,
+        injected_technique=injected_technique,
     )
 
     narration_report = narrator.generate_summary(trajectory)

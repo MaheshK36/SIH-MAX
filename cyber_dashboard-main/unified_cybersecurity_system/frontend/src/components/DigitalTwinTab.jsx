@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Play, Activity, Cpu, FileText, ShieldAlert, CheckCircle2, AlertTriangle, TrendingDown } from "lucide-react";
+import { Play, Activity, Cpu, FileText, ShieldAlert, CheckCircle2, AlertTriangle, TrendingDown, ChevronDown, ChevronRight, Info, Target, Shuffle } from "lucide-react";
 
 // Preset node layout coordinates for the 6-device enterprise topology graph
 const TOPOLOGY_NODES = [
@@ -38,73 +38,42 @@ function NetworkGraphSvg({ nodesData = [], activeStep = null }) {
           </linearGradient>
         </defs>
 
-        {/* Network Connections / Edges */}
         {TOPOLOGY_EDGES.map(({ source, target }, idx) => {
           const p1 = posMap.get(source);
           const p2 = posMap.get(target);
           if (!p1 || !p2) return null;
-
           const n1 = nodeMap.get(source) || {};
           const n2 = nodeMap.get(target) || {};
-
           const isCompromisedPath =
             (n1.status === "compromised" || (n1.infiltration_prob || 0) >= 0.5) &&
             (n2.status === "compromised" || n2.status === "target" || (n2.infiltration_prob || 0) >= 0.25);
 
           return (
             <g key={idx}>
-              <line
-                x1={p1.cx}
-                y1={p1.cy}
-                x2={p2.cx}
-                y2={p2.cy}
+              <line x1={p1.cx} y1={p1.cy} x2={p2.cx} y2={p2.cy}
                 stroke={isCompromisedPath ? "url(#activeAttackGradient)" : "url(#edgeGradient)"}
                 strokeWidth={isCompromisedPath ? 3 : 1.5}
                 strokeDasharray={isCompromisedPath ? "6,4" : "none"}
-                className={isCompromisedPath ? "animate-pulse" : "opacity-40"}
-              />
+                className={isCompromisedPath ? "animate-pulse" : "opacity-40"} />
             </g>
           );
         })}
 
-        {/* Network Device Nodes */}
         {TOPOLOGY_NODES.map((preset) => {
           const liveNode = nodeMap.get(preset.ip) || preset;
           const infProb = liveNode.infiltration_prob || 0.05;
           const isComp = liveNode.status === "compromised" || infProb >= 0.5;
           const isTarget = liveNode.status === "target" || infProb >= 0.25;
-
           const circleFill = isComp ? "#881337" : isTarget ? "#78350f" : "#022c22";
           const strokeColor = isComp ? "#f43f5e" : isTarget ? "#fbbf24" : "#10b981";
 
           return (
             <g key={preset.ip} className="cursor-pointer transition-all duration-300">
-              {/* Outer Pulsing Aura for Active Compromise */}
-              {isComp && (
-                <circle cx={preset.cx} cy={preset.cy} r={28} fill="none" stroke="#f43f5e" strokeWidth={1.5} opacity={0.5} className="animate-ping" />
-              )}
-
-              {/* Node Main Circle */}
-              <circle
-                cx={preset.cx}
-                cy={preset.cy}
-                r={22}
-                fill={circleFill}
-                stroke={strokeColor}
-                strokeWidth={2.5}
-                className="transition-all duration-500"
-              />
-
-              {/* Node Title & Hostname */}
-              <text x={preset.cx} y={preset.cy - 30} textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="bold" fontFamily="monospace">
-                {preset.name}
-              </text>
-              <text x={preset.cx} y={preset.cy + 34} textAnchor="middle" fill="#94a3b8" fontSize="9" fontFamily="monospace">
-                {preset.ip}
-              </text>
-              <text x={preset.cx} y={preset.cy + 45} textAnchor="middle" fill="#818cf8" fontSize="8" fontFamily="monospace">
-                {(infProb * 100).toFixed(1)}% Risk
-              </text>
+              {isComp && (<circle cx={preset.cx} cy={preset.cy} r={28} fill="none" stroke="#f43f5e" strokeWidth={1.5} opacity={0.5} className="animate-ping" />)}
+              <circle cx={preset.cx} cy={preset.cy} r={22} fill={circleFill} stroke={strokeColor} strokeWidth={2.5} className="transition-all duration-500" />
+              <text x={preset.cx} y={preset.cy - 30} textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="bold" fontFamily="monospace">{preset.name}</text>
+              <text x={preset.cx} y={preset.cy + 34} textAnchor="middle" fill="#94a3b8" fontSize="9" fontFamily="monospace">{preset.ip}</text>
+              <text x={preset.cx} y={preset.cy + 45} textAnchor="middle" fill="#818cf8" fontSize="8" fontFamily="monospace">{(infProb * 100).toFixed(1)}% Risk</text>
             </g>
           );
         })}
@@ -113,16 +82,115 @@ function NetworkGraphSvg({ nodesData = [], activeStep = null }) {
   );
 }
 
+/* ──────────── Expandable "Why this path?" Explanation Card ──────────── */
+function HopExplanationCard({ step }) {
+  const [expanded, setExpanded] = useState(false);
+  const expl = step?.explanation;
+  if (!expl) return null;
+
+  return (
+    <div className="bg-slate-950/80 rounded-xl border border-slate-800 overflow-hidden transition-all duration-300">
+      {/* Collapsed summary header */}
+      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-900/60 transition-colors text-left">
+        <div className="flex items-center gap-2 text-xs font-mono">
+          <Target className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+          <span className="text-slate-300">
+            <strong className="text-white">Step {step.step}:</strong>{" "}
+            {step.source_hostname || step.source_ip} → {step.target_hostname} ({step.predicted_stage})
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+            {expl.mitre_technique?.name}
+          </span>
+          {expanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+        </div>
+      </button>
+
+      {/* Expanded detail panel */}
+      {expanded && (
+        <div className="px-4 pb-4 space-y-4 border-t border-slate-800">
+
+          {/* Natural language explanation */}
+          <div className="mt-3 p-3 bg-slate-900/80 rounded-lg border border-indigo-500/20 text-xs text-indigo-200 font-sans leading-relaxed">
+            <Info className="w-3.5 h-3.5 text-indigo-400 inline mr-1.5 -mt-0.5" />
+            {expl.explanation_text}
+          </div>
+
+          {/* Feature Contributions */}
+          <div className="space-y-2">
+            <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Feature Contributions</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {(expl.feature_contributions || []).map((fc, i) => (
+                <div key={i} className="flex items-center justify-between p-2 bg-slate-900 rounded-lg border border-slate-800 font-mono text-[11px]">
+                  <span className="text-slate-400 truncate max-w-[140px]">{fc.feature_name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500">val: {fc.raw_value}</span>
+                    <span className="text-indigo-300 font-bold">w: {fc.weight}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* MITRE Technique Mapping */}
+          <div className="space-y-2">
+            <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">MITRE ATT&CK Technique</h4>
+            <div className="flex items-center gap-3 p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs">
+              <span className="px-2 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-[11px]">
+                {expl.mitre_technique?.id}
+              </span>
+              <span className="text-white">{expl.mitre_technique?.name}</span>
+              <span className="ml-auto text-emerald-400 font-bold">{expl.mitre_technique?.confidence_pct}%</span>
+            </div>
+          </div>
+
+          {/* Reachability Factor */}
+          <div className="space-y-2">
+            <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Reachability Factor</h4>
+            <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-xs text-cyan-300">
+              {expl.reachability_factor}
+            </div>
+          </div>
+
+          {/* Ruled-out Alternatives */}
+          {expl.comparison_to_alternatives && expl.comparison_to_alternatives.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Ruled-Out Candidates</h4>
+              <div className="space-y-2">
+                {expl.comparison_to_alternatives.map((alt, i) => (
+                  <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-slate-900 rounded-lg border border-slate-800 font-mono text-[11px] gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">{alt.hostname}</span>
+                      <span className="text-slate-500">({alt.ip_address})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500">{alt.confidence_pct}% conf</span>
+                      <span className="text-rose-400 text-[10px]">-{alt.margin_behind_winner_pct}% behind</span>
+                    </div>
+                    <span className="text-slate-500 text-[10px] italic">{alt.ruled_out_reason}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DigitalTwinTab() {
   const [kSteps, setKSteps] = useState(10);
-  const [initialIp, setInitialIp] = useState("192.168.1.20");
+  const [entryPointIp, setEntryPointIp] = useState("192.168.1.1");
+  const [simSeed, setSimSeed] = useState(42);
+  const [injectedTechnique, setInjectedTechnique] = useState("");
   const [loading, setLoading] = useState(false);
   const [rolloutData, setRolloutData] = useState(null);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
   const [fidelityReport, setFidelityReport] = useState(null);
   const [fidelityLoading, setFidelityLoading] = useState(false);
 
-  // Auto-play interval for live simulation step animation
   useEffect(() => {
     if (!rolloutData || !rolloutData.steps || rolloutData.steps.length === 0) return;
     const interval = setInterval(() => {
@@ -131,13 +199,23 @@ export function DigitalTwinTab() {
     return () => clearInterval(interval);
   }, [rolloutData]);
 
+  const handleRandomizeSeed = () => setSimSeed(Math.floor(Math.random() * 99999));
+
   const handleStartRollout = async () => {
     setLoading(true);
     try {
+      const payload = {
+        k_steps: kSteps,
+        entry_point_ip: entryPointIp,
+        seed: simSeed,
+        stop_on_terminal: true,
+      };
+      if (injectedTechnique) payload.injected_technique = injectedTechnique;
+
       const res = await fetch("/api/v1/twin/rollout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ k_steps: kSteps, initial_target_ip: initialIp, stop_on_terminal: true }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       setRolloutData(data);
@@ -167,6 +245,7 @@ export function DigitalTwinTab() {
   };
 
   const activeFrame = rolloutData?.steps?.[currentStepIdx] || null;
+  const simParams = activeFrame?.simulation_params || null;
 
   return (
     <div className="space-y-6">
@@ -177,57 +256,67 @@ export function DigitalTwinTab() {
             <Activity className="w-5 h-5 text-indigo-400" /> Network Digital Twin Real-Time Simulator
           </h2>
           <p className="text-xs text-slate-400 mt-1 font-mono">
-            Autoregressive PyTorch WorldModel simulation layer modeling cyber compromise spread across network topology graph.
+            Explainable, parameter-driven autoregressive WorldModel simulation with structured per-hop reasoning.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
+          {/* Entry Point Selector */}
           <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
-            <span className="text-slate-400">Target IP:</span>
-            <select
-              value={initialIp}
-              onChange={(e) => setInitialIp(e.target.value)}
-              className="bg-transparent text-white focus:outline-none"
-            >
+            <span className="text-slate-400">Entry Point:</span>
+            <select value={entryPointIp} onChange={(e) => setEntryPointIp(e.target.value)} className="bg-transparent text-white focus:outline-none">
+              <option value="192.168.1.1">192.168.1.1 (Ext-Router)</option>
+              <option value="192.168.1.10">192.168.1.10 (DMZ-Firewall)</option>
               <option value="192.168.1.20">192.168.1.20 (Web-Server)</option>
               <option value="192.168.1.30">192.168.1.30 (App-Server)</option>
-              <option value="192.168.1.40">192.168.1.40 (Core Database)</option>
+              <option value="192.168.1.40">192.168.1.40 (Core-Database)</option>
+              <option value="192.168.1.50">192.168.1.50 (Workstation-01)</option>
             </select>
           </div>
 
+          {/* Horizon k */}
           <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
             <span className="text-slate-400">Horizon (k):</span>
-            <input
-              type="number"
-              min="3"
-              max="20"
-              value={kSteps}
-              onChange={(e) => setKSteps(Number(e.target.value))}
-              className="w-12 bg-transparent text-white focus:outline-none"
-            />
+            <input type="number" min="3" max="20" value={kSteps} onChange={(e) => setKSteps(Number(e.target.value))} className="w-12 bg-transparent text-white focus:outline-none" />
           </div>
 
-          <button
-            onClick={handleStartRollout}
-            disabled={loading}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-lg shadow-indigo-600/30 disabled:opacity-50"
-          >
+          {/* Seed with Randomize */}
+          <div className="flex items-center gap-1 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
+            <span className="text-slate-400">Seed:</span>
+            <input type="number" value={simSeed} onChange={(e) => setSimSeed(Number(e.target.value))} className="w-16 bg-transparent text-white focus:outline-none" />
+            <button onClick={handleRandomizeSeed} title="Randomize seed" className="p-1 rounded hover:bg-slate-800 text-indigo-400 transition-colors">
+              <Shuffle className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <button onClick={handleStartRollout} disabled={loading}
+            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-lg shadow-indigo-600/30 disabled:opacity-50">
             <Play className="w-4 h-4 fill-current" /> {loading ? "Simulating..." : "Start Live Rollout"}
           </button>
 
-          <button
-            onClick={handleRunFidelity}
-            disabled={fidelityLoading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition-all"
-          >
-            <Cpu className="w-4 h-4" /> {fidelityLoading ? "Evaluating..." : "Run Fidelity Benchmark"}
+          <button onClick={handleRunFidelity} disabled={fidelityLoading}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition-all">
+            <Cpu className="w-4 h-4" /> {fidelityLoading ? "Evaluating..." : "Fidelity Benchmark"}
           </button>
         </div>
       </div>
 
+      {/* ──────── Simulation Parameters Readout Banner ──────── */}
+      {simParams && (
+        <div className="flex flex-wrap items-center gap-4 bg-slate-950/70 px-5 py-3 rounded-xl border border-indigo-500/20 font-mono text-xs">
+          <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Simulation Parameters:</span>
+          <span className="text-indigo-300">Seed: <strong className="text-white">{simParams.seed}</strong></span>
+          <span className="text-indigo-300">Entry Point: <strong className="text-white">{simParams.entry_point_ip}</strong></span>
+          <span className="text-indigo-300">Technique: <strong className="text-white">{simParams.injected_technique || "Model-inferred"}</strong></span>
+          <span className="text-slate-500">|</span>
+          <span className="text-emerald-400 text-[10px]">
+            <CheckCircle2 className="w-3 h-3 inline mr-0.5 -mt-0.5" /> Parameters vary between runs — change seed or entry point for different outcomes
+          </span>
+        </div>
+      )}
+
       {/* Interactive Topology Graph & Side Telemetry Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Dynamic SVG Topology Graph */}
         <div className="lg:col-span-2 bg-slate-900/50 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <h3 className="text-sm font-bold text-white uppercase tracking-wider font-heading flex items-center gap-2">
@@ -239,12 +328,10 @@ export function DigitalTwinTab() {
               </span>
             )}
           </div>
-
-          {/* SVG Visual Graph */}
           <NetworkGraphSvg nodesData={activeFrame?.nodes} activeStep={activeFrame} />
         </div>
 
-        {/* Right 1 Col: Telemetry Viewport */}
+        {/* Right: Telemetry Viewport */}
         <div className="bg-slate-900/50 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl space-y-4">
           <h3 className="text-sm font-bold text-white uppercase tracking-wider font-heading border-b border-slate-800 pb-3 flex items-center gap-2">
             <Activity className="w-4 h-4 text-indigo-400" /> Live Simulation Snapshot
@@ -253,30 +340,28 @@ export function DigitalTwinTab() {
           {activeFrame ? (
             <div className="space-y-4 font-mono text-xs">
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
+                <span className="text-slate-400">Source Host:</span>
+                <span className="text-cyan-300 font-bold">{activeFrame.source_hostname || activeFrame.source_ip}</span>
+              </div>
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
                 <span className="text-slate-400">Target Host:</span>
                 <span className="text-white font-bold">{activeFrame.target_hostname}</span>
               </div>
-
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
                 <span className="text-slate-400">Predicted MITRE Stage:</span>
                 <span className="text-amber-400 font-bold">{activeFrame.predicted_stage}</span>
               </div>
-
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
                 <span className="text-slate-400">Stage Confidence:</span>
                 <span className="text-emerald-400 font-bold">{(activeFrame.stage_confidence * 100).toFixed(1)}%</span>
               </div>
-
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">Infiltration Risk:</span>
                   <span className="text-rose-400 font-bold">{(activeFrame.infiltration_probability * 100).toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-rose-500 transition-all duration-300"
-                    style={{ width: `${Math.min(activeFrame.infiltration_probability * 100, 100)}%` }}
-                  ></div>
+                  <div className="h-full bg-rose-500 transition-all duration-300" style={{ width: `${Math.min(activeFrame.infiltration_probability * 100, 100)}%` }}></div>
                 </div>
               </div>
             </div>
@@ -288,13 +373,29 @@ export function DigitalTwinTab() {
         </div>
       </div>
 
+      {/* ──────── "Why This Path?" Expandable Explanation Panel ──────── */}
+      {rolloutData?.steps && rolloutData.steps.length > 0 && (
+        <div className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl space-y-3">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider font-heading flex items-center gap-2 border-b border-slate-800 pb-3">
+            <ShieldAlert className="w-4 h-4 text-amber-400" /> Why This Path? — Per-Hop Explainability
+          </h3>
+          <p className="text-[10px] text-slate-500 font-mono">
+            Each hop shows feature contributions from model weights, MITRE ATT&CK technique mapping with confidence, reachability justification, and scored alternative candidates that were ruled out.
+          </p>
+          <div className="space-y-2">
+            {rolloutData.steps.map((step, i) => (
+              <HopExplanationCard key={i} step={step} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Empirical Fidelity Benchmark Results & Drift Curve */}
       {fidelityReport && (
         <div className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 backdrop-blur-md space-y-4 shadow-xl font-mono text-xs">
           <h3 className="text-sm font-bold text-white uppercase tracking-wider font-heading flex items-center gap-2">
             <Cpu className="w-4 h-4 text-emerald-400" /> Digital Twin Fidelity & Horizon Drift Curve Benchmark
           </h3>
-
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
               <span className="text-slate-400">State MSE:</span>
@@ -313,15 +414,13 @@ export function DigitalTwinTab() {
               <p className="text-lg font-bold text-white mt-1">{fidelityReport.num_sequences_evaluated}</p>
             </div>
           </div>
-
-          {/* Visual Step-by-step Horizon Drift Curve */}
           {fidelityReport.horizon_drift_curve_mse && (
             <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
               <div className="flex justify-between items-center border-b border-slate-800 pb-2">
                 <span className="text-xs text-slate-300 font-bold flex items-center gap-2">
                   <TrendingDown className="w-4 h-4 text-amber-400" /> Simulation Error Horizon Degradation Drift Curve
                 </span>
-                <span className="text-[10px] text-slate-500">MSE per step $k$</span>
+                <span className="text-[10px] text-slate-500">MSE per step k</span>
               </div>
               <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                 {Object.entries(fidelityReport.horizon_drift_curve_mse).map(([stepKey, mseVal]) => (

@@ -49,6 +49,9 @@ class HostNode:
     stage_idx: int = 0
     stage_name: str = "Reconnaissance"
     infiltration_prob: float = 0.05
+    criticality: float = 0.5
+    open_ports: List[int] = field(default_factory=list)
+    services: List[str] = field(default_factory=list)
     features: np.ndarray = field(default_factory=lambda: np.zeros(len(DEFAULT_FLOW_FEATURES), dtype=np.float32))
 
     def to_dict(self) -> Dict[str, Any]:
@@ -61,6 +64,9 @@ class HostNode:
             "stage_idx": self.stage_idx,
             "stage_name": self.stage_name,
             "infiltration_prob": float(self.infiltration_prob),
+            "criticality": float(self.criticality),
+            "open_ports": list(self.open_ports),
+            "services": list(self.services),
         }
 
 
@@ -81,12 +87,12 @@ class NetworkGraphState:
     def _build_default_topology(self) -> None:
         """Construct a realistic 6-node enterprise network graph topology."""
         nodes_info = [
-            ("192.168.1.1", "Ext-Router", "Gateway"),
-            ("192.168.1.10", "DMZ-Firewall", "Security Gateway"),
-            ("192.168.1.20", "Web-Server", "Web Infrastructure"),
-            ("192.168.1.30", "App-Server", "Application Cluster"),
-            ("192.168.1.40", "Core-Database", "Database Server"),
-            ("192.168.1.50", "Workstation-01", "User Device"),
+            ("192.168.1.1", "Ext-Router", "Gateway", 0.4, [80, 22], ["HTTP", "SSH"]),
+            ("192.168.1.10", "DMZ-Firewall", "Security Gateway", 0.6, [443, 22], ["HTTPS", "SSH"]),
+            ("192.168.1.20", "Web-Server", "Web Infrastructure", 0.7, [80, 443, 8080], ["HTTP", "HTTPS", "Nginx"]),
+            ("192.168.1.30", "App-Server", "Application Cluster", 0.8, [8080, 22, 8443], ["Tomcat", "SSH", "API"]),
+            ("192.168.1.40", "Core-Database", "Database Server", 0.95, [5432, 445, 1521], ["PostgreSQL", "SMB", "Oracle"]),
+            ("192.168.1.50", "Workstation-01", "User Device", 0.3, [445, 3389], ["SMB", "RDP"]),
         ]
 
         preset_positions = {
@@ -98,7 +104,7 @@ class NetworkGraphState:
             "192.168.1.50": (-1.0, -1.5),
         }
 
-        for ip, name, role in nodes_info:
+        for ip, name, role, crit, ports, svcs in nodes_info:
             feat_vec = np.random.randn(len(self.feature_cols)).astype(np.float32) * 0.1
             host = HostNode(
                 ip_address=ip,
@@ -108,6 +114,9 @@ class NetworkGraphState:
                 stage_idx=0,
                 stage_name=DEFAULT_MITRE_STAGES[0],
                 infiltration_prob=0.05,
+                criticality=crit,
+                open_ports=ports,
+                services=svcs,
                 features=feat_vec,
             )
             self.hosts[ip] = host
@@ -190,6 +199,9 @@ class NetworkGraphState:
                 stage_idx=host.stage_idx,
                 stage_name=host.stage_name,
                 infiltration_prob=host.infiltration_prob,
+                criticality=host.criticality,
+                open_ports=list(host.open_ports),
+                services=list(host.services),
                 features=np.copy(host.features),
             )
             new_state.graph.nodes[ip].update(new_state.hosts[ip].to_dict())
