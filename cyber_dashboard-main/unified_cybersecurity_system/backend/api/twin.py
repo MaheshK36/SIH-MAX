@@ -23,9 +23,19 @@ checkpoint_path = "models/checkpoints/attack_world_model.pt"
 if os.path.exists(checkpoint_path):
     try:
         ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
-        if isinstance(ckpt, dict) and "model_state_dict" in ckpt:
-            ckpt = ckpt["model_state_dict"]
-        pytorch_model.load_state_dict(ckpt)
+        if isinstance(ckpt, dict):
+            if "model_state_dict" in ckpt:
+                ckpt = ckpt["model_state_dict"]
+            elif "model_state" in ckpt:
+                ckpt = ckpt["model_state"]
+        if isinstance(ckpt, dict) and "backbone.weight_ih_l0" in ckpt:
+            ckpt_in_dim = ckpt["backbone.weight_ih_l0"].shape[1]
+            if ckpt_in_dim == model_cfg.input_size:
+                pytorch_model.load_state_dict(ckpt)
+            else:
+                print(f"[TwinAPI] Checkpoint input_dim {ckpt_in_dim} differs from config {model_cfg.input_size}. Using freshly initialized model.")
+        else:
+            pytorch_model.load_state_dict(ckpt)
     except Exception as e:
         print(f"[TwinAPI] Warning loading checkpoint: {e}")
 

@@ -6,6 +6,12 @@ import unittest
 import numpy as np
 import torch
 
+import sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from backend.adapters.normalization import normalize_flow_dict, normalize_access_event
 from models.attack_world_model import AttackWorldModel, ModelConfig
 from models.graph_encoder import GraphEncoder
