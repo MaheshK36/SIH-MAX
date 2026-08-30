@@ -1,0 +1,124 @@
+{
+  "summary": {
+    "total_events": 10,
+    "total_anomalies": 0,
+    "active_sessions": 7,
+    "audit_records_onchain": 45,
+    "cycles_run": 0,
+    "last_updated": "2026-08-30T11:40:58.285640+00:00"
+  },
+  "events": [
+    {
+      "event_id": "EVT-BED34E97",
+      "user_id": "usr_guest",
+      "session_id": "SESS-B1841A",
+      "event_type": "login",
+      "timestamp": "2026-08-30T11:40:58.189154+00:00",
+      "ip_address": "172.16.0.42",
+      "location": "US-East",
+      "device_info": "Edge/Windows",
+      "status": "success"
+    },
+    {
+      "event_id": "EVT-D6B51A31",
+      "user_id": "usr_bob",
+      "session_id": "SESS-5BD583",
+      "event_type": "login",
+      "timestamp": "2026-08-30T11:40:58.189272+00:00",
+      "ip_address": "192.168.1.110",
+      "location": "US-West",
+      "device_info": "Firefox/Windows",
+      "status": "success"
+    },
+    {
+      "event_id": "EVT-6B814588",
+      "user_id": "usr_alice",
+      "session_id": "SESS-AE8CA7",
+      "event_type": "logout",
+      "timestamp": "2026-08-30T11:40:58.189345+00:00",
+      "ip_address": "192.168.1.105",
+      "location": "US-East",
+      "device_info": "Chrome/MacOS",
+      "status": "success"
+    },
+    {
+      "event_id": "EVT-F855E8BD",
+      "user_id": "usr_charlie",
+      "session_id": "SESS-97C512",
+      "event_type": "login",
+      "timestamp": "2026-08-30T11:40:58.189412+00:00",
+      "ip_address": "10.0.4.15",
+      "location": "US-East",
+      "device_info": "Terminal/Linux",
+      "status": "success"
+    },
+    {
+      "event_id": "EVT-6FF07FBF",
+      "user_id": "usr_bob",
+      "session_id": "SESS-773033",
+      "event_type": "logout",
+      "timestamp": "2026-08-30T11:40:58.189474+00:00",
+      "ip_address": "192.168.1.110",
+      "location": "US-West",
+      "device_info": "Firefox/Windows",
+      "status": "success"
+    },
+    {
+      "event_id": "EVT-AAF475F6",
+      "user_id": "usr_alice",
+      "session_id": "SESS-A16750",
+      "event_type": "login",
+      "timestamp": "2026-08-30T11:40:58.189535+00:00",
+      "ip_address": "192.168.1.105",
+      "location": "US-East",
+      "device_info": "Chrome/MacOS",
+      "status": "success"
+    },
+    {
+      "event_id": "EVT-4C15E7F5",
+      "user_id": "usr_dev_lead",
+      "session_id": "SESS-DB8C21",
+      "event_type": "login",
+      "timestamp": "2026-08-30T11:40:58.189596+00:00",
+      "ip_address": "192.168.2.88",
+      "location": "EU-West",
+      "device_info": "Safari/MacOS",
+      "status": "success"
+    },
+    {
+      "event_id": "EVT-BBF804DD",
+      "user_id": "usr_guest",
+      "session_id": "SESS-9A6267",
+      "event_type": "login",
+      "timestamp": "2026-08-30T11:40:58.189671+00:00",
+      "ip_address": "172.16.0.42",
+      "location": "US-East",
+      "device_info": "Edge/Windows",
+      "status": "success"
+    },
+    {
+      "event_id": "EVT-1EFE11A9",
+      "user_id": "usr_charlie",
+      "session_id": "SESS-1221C8",
+      "event_type": "logout",
+      "timestamp": "2026-08-30T11:40:58.189731+00:00",
+      "ip_address": "10.0.4.15",
+      "location": "US-East",
+      "device_info": "Terminal/Linux",
+      "status": "success"
+    },
+    {
+      "event_id": "EVT-6F117BB0",
+      "user_id": "usr_admin",
+      "session_id": "SESS-1FD3FB",
+      "event_type": "login",
+      "timestamp": "2026-08-30T11:40:58.189796+00:00",
+      "ip_address": "10.0.1.1",
+      "location": "US-Central",
+      "device_info": "Chrome/Windows",
+      "status": "success"
+    }
+  ],
+  "anomalies": [],
+  "audit_trail": []
+}
