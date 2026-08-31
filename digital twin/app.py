@@ -192,6 +192,50 @@ def main() -> None:
             full_report = generate_explanation(trajectory_history, stage_names=DEFAULT_MITRE_STAGES, min_confidence=min_confidence)
             st.code(full_report, language="text")
 
+            st.subheader("🛡️ Step-by-Step AI Explainability Details")
+            for step_data in trajectory_history:
+                step_num = step_data["step"]
+                target_name = step_data.get("target_hostname", "Target")
+                src_ip = step_data.get("source_ip", "Source")
+                stage = step_data["predicted_stage"]
+                expl = step_data.get("explanation", None)
+                
+                if expl:
+                    with st.expander(f"Step {step_num}: {src_ip} → {target_name} ({stage})", expanded=True):
+                        st.markdown(f"**AI Narrative:** {expl['explanation_text']}")
+                        st.markdown(f"**Reachability Driver:** `{expl['reachability_factor']}`")
+                        
+                        # MITRE ATT&CK technique details
+                        tech = expl["mitre_technique"]
+                        st.markdown(f"**MITRE Technique:** `{tech['id']}` - **{tech['name']}** ({tech['confidence_pct']}% confidence)")
+                        
+                        # Feature contributions
+                        st.markdown("**Top Flow Feature Contributions:**")
+                        fc_data = []
+                        for fc in expl["feature_contributions"]:
+                            fc_data.append({
+                                "Feature": fc["feature_name"],
+                                "Value": fc["raw_value"],
+                                "Weight": fc["weight"],
+                                "Attribution": fc["contribution"]
+                            })
+                        st.table(pd.DataFrame(fc_data))
+                        
+                        # Ruled out alternatives
+                        alts = expl.get("comparison_to_alternatives", [])
+                        if alts:
+                            st.markdown("**Ruled-Out Candidate Alternatives:**")
+                            alt_data = []
+                            for alt in alts:
+                                alt_data.append({
+                                    "Candidate Host": alt["hostname"],
+                                    "IP Address": alt["ip_address"],
+                                    "Confidence %": alt["confidence_pct"],
+                                    "Margin Behind %": alt["margin_behind_winner_pct"],
+                                    "Ruled-Out Reason": alt["ruled_out_reason"]
+                                })
+                            st.table(pd.DataFrame(alt_data))
+
     # TAB 2: TWIN FIDELITY CHECK & DRIFT BENCHMARK
     with tab_val:
         st.subheader("🧪 Digital Twin Fidelity Check & Horizon Drift Analysis")

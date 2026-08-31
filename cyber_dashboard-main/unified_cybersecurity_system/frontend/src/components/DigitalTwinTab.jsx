@@ -84,7 +84,7 @@ function NetworkGraphSvg({ nodesData = [], activeStep = null }) {
 
 /* ──────────── Expandable "Why this path?" Explanation Card ──────────── */
 function HopExplanationCard({ step }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const expl = step?.explanation;
   if (!expl) return null;
 
@@ -363,6 +363,12 @@ export function DigitalTwinTab() {
                 <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
                   <div className="h-full bg-rose-500 transition-all duration-300" style={{ width: `${Math.min(activeFrame.infiltration_probability * 100, 100)}%` }}></div>
                 </div>
+              </div>
+              <div className="p-3 bg-slate-950 rounded-xl border border-indigo-500/20 space-y-1.5 text-left">
+                <span className="text-indigo-400 font-bold text-[10px] uppercase tracking-wider block">AI Explanation / Reason</span>
+                <p className="text-indigo-200 text-xs font-sans leading-relaxed font-normal">
+                  {activeFrame.explanation?.explanation_text || "Calculating step explanation..."}
+                </p>
               </div>
             </div>
           ) : (

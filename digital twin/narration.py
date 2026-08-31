@@ -56,10 +56,16 @@ class TrajectoryNarrator:
         if step_data["stage_confidence"] < self.min_confidence:
             warning = f" [!] (Low Confidence: {conf:.1f}%)"
 
-        return (
+        base_msg = (
             f"[STEP {step}] {icon} Target: {target_name} ({target_ip}) | "
             f"Stage: {stage} ({conf:.1f}% conf) | Infiltration Risk: {inf_pct:.1f}%{warning}"
         )
+        
+        explanation_msg = ""
+        if "explanation" in step_data and "explanation_text" in step_data["explanation"]:
+            explanation_msg = f"\nAI EXPLANATION: {step_data['explanation']['explanation_text']}"
+            
+        return base_msg + explanation_msg
 
     def generate_summary(
         self,

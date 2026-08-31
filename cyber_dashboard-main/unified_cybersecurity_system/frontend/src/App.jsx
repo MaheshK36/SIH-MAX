@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Shield, Activity, Lock, RefreshCw, Server, Zap, Database, Cpu } from "lucide-react";
+import { Shield, Activity, Lock, RefreshCw, Server, Zap, Database, Cpu, Link2, Globe, FlaskConical, Network } from "lucide-react";
 
 import { PulseDot } from "./components/Shared.jsx";
 import { AuditTab } from "./components/AuditTab.jsx";
@@ -12,6 +12,44 @@ const SUMMARY_URL = "/api/analytics/summary";
 const AUDIT_URL = "/api/audit-logs";
 const ANOMALIES_URL = "/api/anomalies";
 const REFRESH_MS = 10_000;
+
+/* ── Reusable Iframe Embed Component ── */
+function EmbeddedView({ src, title }) {
+  return (
+    <div className="w-full bg-slate-900/50 rounded-2xl border border-slate-800 backdrop-blur-md shadow-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-900/80 border-b border-slate-800">
+        <Link2 className="w-3.5 h-3.5 text-indigo-400" />
+        <span className="text-xs font-mono text-slate-400">{title}</span>
+        <span className="text-[10px] font-mono text-slate-600 ml-auto">{src}</span>
+        <a href={src} target="_blank" rel="noopener noreferrer"
+          className="text-[10px] font-mono text-indigo-400 hover:text-indigo-300 transition-colors px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">
+          Open ↗
+        </a>
+      </div>
+      <iframe
+        src={src}
+        title={title}
+        className="w-full border-0"
+        style={{ height: "calc(100vh - 220px)", minHeight: "600px" }}
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      />
+    </div>
+  );
+}
+
+/* ── Tab Configuration ── */
+const TABS = [
+  { id: "twin", label: "Digital Twin Simulator", icon: Cpu },
+  { id: "cyberseer", label: "GNN Attack Forecast", icon: Zap },
+  { id: "audit", label: "Blockchain Audit Log", icon: Lock },
+  { id: "analytics", label: "Anomaly Gate & Analytics", icon: Activity },
+  { id: "ingest", label: "Live Flow Ingestion", icon: Database },
+  { id: "blockchain", label: "Blockchain Intel", icon: Link2 },
+  { id: "twin1", label: "Digital Twin Lab 1", icon: FlaskConical },
+  { id: "twin2", label: "Digital Twin Lab 2", icon: Server },
+  { id: "network", label: "Network Model", icon: Network },
+  { id: "cyberdash", label: "Cyber Dashboard", icon: Globe },
+];
 
 export default function App() {
   const [data, setData] = useState({
@@ -102,60 +140,22 @@ export default function App() {
 
         {/* Navigation Tab Bar */}
         <nav className="flex items-center gap-2 p-1.5 bg-slate-900/60 rounded-xl border border-slate-800 backdrop-blur-md font-mono text-xs overflow-x-auto">
-          <button
-            onClick={() => setActiveTab("twin")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all font-semibold shrink-0 ${
-              activeTab === "twin"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            <Cpu className="w-4 h-4" /> Digital Twin Simulator
-          </button>
-
-          <button
-            onClick={() => setActiveTab("cyberseer")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all font-semibold shrink-0 ${
-              activeTab === "cyberseer"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            <Zap className="w-4 h-4" /> GNN Attack Forecast
-          </button>
-
-          <button
-            onClick={() => setActiveTab("audit")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all font-semibold shrink-0 ${
-              activeTab === "audit"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            <Lock className="w-4 h-4" /> Blockchain Audit Log
-          </button>
-
-          <button
-            onClick={() => setActiveTab("analytics")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all font-semibold shrink-0 ${
-              activeTab === "analytics"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            <Activity className="w-4 h-4" /> Anomaly Gate & Analytics
-          </button>
-
-          <button
-            onClick={() => setActiveTab("ingest")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all font-semibold shrink-0 ${
-              activeTab === "ingest"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-            }`}
-          >
-            <Database className="w-4 h-4" /> Live Flow Ingestion
-          </button>
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all font-semibold shrink-0 ${
+                  activeTab === tab.id
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                }`}
+              >
+                <Icon className="w-4 h-4" /> {tab.label}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Main Tab Content Viewport */}
@@ -165,6 +165,11 @@ export default function App() {
           {activeTab === "audit" && <AuditTab events={data.events} auditTrail={data.auditTrail} />}
           {activeTab === "analytics" && <AnalyticsTab summary={data.summary} anomalies={data.anomalies} />}
           {activeTab === "ingest" && <LiveIngestTab />}
+          {activeTab === "blockchain" && <EmbeddedView src="http://localhost:5174" title="Blockchain Intelligence Dashboard" />}
+          {activeTab === "twin1" && <EmbeddedView src="http://localhost:8501" title="Digital Twin Simulation Lab — Instance 1 (Streamlit)" />}
+          {activeTab === "twin2" && <EmbeddedView src="http://localhost:8502" title="Digital Twin Simulation Lab — Instance 2 (Streamlit)" />}
+          {activeTab === "network" && <EmbeddedView src="http://localhost:8080" title="Network Topology Model Viewer" />}
+          {activeTab === "cyberdash" && <EmbeddedView src="http://localhost:5175" title="Cyber Security Dashboard" />}
         </main>
       </div>
     </div>
